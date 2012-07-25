@@ -1,0 +1,150 @@
+package ioio.examples.hello;
+
+import ioio.lib.api.DigitalOutput;
+import ioio.lib.api.SpiMaster;
+import ioio.lib.api.exception.ConnectionLostException;
+import ioio.lib.util.BaseIOIOLooper;
+import ioio.lib.util.IOIOLooper;
+import ioio.lib.util.android.IOIOActivity;
+import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.ToggleButton;
+
+/**
+ * This is the main activity of the HelloIOIO example application.
+ * 
+ * It displays a toggle button on the screen, which enables control of the
+ * on-board LED. This example shows a very simple usage of the IOIO, by using
+ * the {@link IOIOActivity} class. For a more advanced use case, see the
+ * HelloIOIOPower example.
+ */
+public class MainActivity extends IOIOActivity {
+	private ToggleButton button_;
+	private static TextView logView;
+	private static StringBuilder logString;
+
+	/**
+	 * Called when the activity is first created. Here we normally initialize
+	 * our GUI.
+	 */
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.main);
+		button_ = (ToggleButton) findViewById(R.id.button);
+		logView = (TextView) findViewById(R.id.logView);
+		logString = new StringBuilder();
+		log("MainActivity onCreate()");
+	}
+	
+	public static void log(String s) {
+		logView.setText(logString.append(s).append("\n").toString());
+	}
+	
+	/** An RGB triplet. */
+	private static class RGB {
+		byte r;
+		byte g;
+		byte b;
+
+		RGB() {
+			clear();
+		}
+
+		public void clear() {
+			r = g = b = 0;
+		}
+	}
+	
+	/**
+	 * This is the thread on which all the IOIO activity happens. It will be run
+	 * every time the application is resumed and aborted when it is paused. The
+	 * method setup() will be called right after a connection with the IOIO has
+	 * been established (which might happen several times!). Then, loop() will
+	 * be called repetitively until the IOIO gets disconnected.
+	 */
+	class Looper extends BaseIOIOLooper {
+		/** The on-board LED. */
+		private DigitalOutput led_;
+		private SpiMaster spi_;
+		private byte[] buffer1_ = new byte[48];
+		private byte[] buffer2_ = new byte[48];
+		private RGB RGB_ = new RGB();
+
+		/**
+		 * Called every time a connection with IOIO has been established.
+		 * Typically used to open pins.
+		 * 
+		 * @throws ConnectionLostException
+		 *             When IOIO connection is lost.
+		 * 
+		 * @see ioio.lib.util.AbstractIOIOActivity.IOIOThread#setup()
+		 */
+		@Override
+		protected void setup() throws ConnectionLostException {
+			led_ = ioio_.openDigitalOutput(0, true);
+			spi_ = ioio_.openSpiMaster(5, 4, 3, 6, SpiMaster.Rate.RATE_50K);
+			log("Looper setup()");
+		}
+
+		/**
+		 * Called repetitively while the IOIO is connected.
+		 * 
+		 * @throws ConnectionLostException
+		 *             When IOIO connection is lost.
+		 * 
+		 * @see ioio.lib.util.AbstractIOIOActivity.IOIOThread#loop()
+		 */
+		@Override
+		public void loop() throws ConnectionLostException {
+			led_.write(!button_.isChecked());
+			for (int i = 0; i < 32; i++) {
+				RGB_.clear();
+				getRandomColor(RGB_);
+				setLed(i, RGB_);
+			}
+			try {
+				spi_.writeRead(buffer1_, buffer1_.length, buffer1_.length, null, 0);
+				spi_.writeRead(buffer2_, buffer2_.length, buffer2_.length, null, 0);
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+			}
+		}
+		
+		/** Choose a random pixel from the current preview frame. */
+		private void getRandomColor(RGB rgb) {
+			rgb.r = 100;
+			rgb.g = 100;
+			rgb.b = 100;
+		}
+
+		/**
+		 * Set an LED to a certain color.
+		 * If black is applied, the LED will fade out.
+		 */
+		private void setLed(int num, RGB rgb) {
+			// Find the right buffer to write to (first or second half).
+			byte[] buffer;
+			if (num >= 16) {
+				buffer = buffer2_;
+				num -= 16;
+			} else {
+				buffer = buffer1_;
+			}
+			num *= 3;
+			buffer[num++] = rgb.r;
+			buffer[num++] = rgb.g;
+			buffer[num++] = rgb.b;
+		}
+	}
+
+	/**
+	 * A method to create our IOIO thread.
+	 * 
+	 * @see ioio.lib.util.AbstractIOIOActivity#createIOIOThread()
+	 */
+	@Override
+	protected IOIOLooper createIOIOLooper() {
+		return new Looper();
+	}
+}

@@ -1,0 +1,15 @@
+<resources>
+
+    <string name="app_name">IOIOLights</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+
+</resources><?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">IOIO Lights</string>
+    <string name="frequency">Frequency</string>
+    <string name="fade">Fade Time</string>
+
+</resources>
