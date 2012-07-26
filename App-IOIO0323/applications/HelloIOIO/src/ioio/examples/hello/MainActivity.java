@@ -7,6 +7,9 @@ import ioio.lib.util.BaseIOIOLooper;
 import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOActivity;
 import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -19,9 +22,12 @@ import android.widget.ToggleButton;
  * HelloIOIOPower example.
  */
 public class MainActivity extends IOIOActivity {
-	private ToggleButton button_;
-	private static TextView logView;
-	private static StringBuilder logString;
+	private ToggleButton mToggleButton;
+	private TextView logView;
+	private  StringBuilder logString;
+	
+	private Looper mLooper;
+	private ScrollView mScrollView;
 
 	/**
 	 * Called when the activity is first created. Here we normally initialize
@@ -31,14 +37,42 @@ public class MainActivity extends IOIOActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-		button_ = (ToggleButton) findViewById(R.id.button);
+		mScrollView = (ScrollView) findViewById(R.id.scroll_view);
+		mToggleButton = (ToggleButton) (findViewById(R.id.button));
+		findViewById(R.id.clear_btn).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				logString = new StringBuilder();
+				logView.setText("");
+			}
+		});
+		findViewById(R.id.force_btn).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				try {
+					if (mLooper != null)
+						mLooper.setup();
+				} catch (ConnectionLostException e) {
+					e.printStackTrace();
+					log("Failed to force setup");
+					log(e.getMessage());
+				}
+			}
+		});
+		
 		logView = (TextView) findViewById(R.id.logView);
 		logString = new StringBuilder();
 		log("MainActivity onCreate()");
 	}
 	
-	public static void log(String s) {
-		logView.setText(logString.append(s).append("\n").toString());
+	public void log(final String s) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				logView.setText(logString.append(s).append("\n").toString());
+				mScrollView.fullScroll(ScrollView.FOCUS_DOWN);
+			}
+		});
 	}
 	
 	/** An RGB triplet. */
@@ -65,11 +99,11 @@ public class MainActivity extends IOIOActivity {
 	 */
 	class Looper extends BaseIOIOLooper {
 		/** The on-board LED. */
-		private DigitalOutput led_;
-		private SpiMaster spi_;
-		private byte[] buffer1_ = new byte[48];
-		private byte[] buffer2_ = new byte[48];
-		private RGB RGB_ = new RGB();
+		private DigitalOutput mLED;
+		private SpiMaster mSPI;
+		private byte[] mBuffer1 = new byte[48];
+		private byte[] mBuffer2 = new byte[48];
+		private RGB mRGB = new RGB();
 
 		/**
 		 * Called every time a connection with IOIO has been established.
@@ -82,9 +116,23 @@ public class MainActivity extends IOIOActivity {
 		 */
 		@Override
 		protected void setup() throws ConnectionLostException {
-			led_ = ioio_.openDigitalOutput(0, true);
-			spi_ = ioio_.openSpiMaster(5, 4, 3, 6, SpiMaster.Rate.RATE_50K);
 			log("Looper setup()");
+			if (ioio_ != null) {
+				mLED = ioio_.openDigitalOutput(0, true);
+				mSPI = ioio_.openSpiMaster(5, 4, 3, 6, SpiMaster.Rate.RATE_50K);
+			}
+		}
+		
+		@Override
+		public void disconnected() {
+			log("disconnected()");
+			super.disconnected();
+		}
+		
+		@Override
+		public void incompatible() {
+			log("incompatible()");
+			super.incompatible();
 		}
 
 		/**
@@ -97,17 +145,27 @@ public class MainActivity extends IOIOActivity {
 		 */
 		@Override
 		public void loop() throws ConnectionLostException {
-			led_.write(!button_.isChecked());
-			for (int i = 0; i < 32; i++) {
-				RGB_.clear();
-				getRandomColor(RGB_);
-				setLed(i, RGB_);
-			}
+			log("loop()");
+			
+			mLED.write(!mToggleButton.isChecked());
+			
+//			if (mOn) {
+//				for (int i = 0; i < 32; i++) {
+//					mRGB.clear();
+//					getRandomColor(mRGB);
+//					setLed(i, mRGB);
+//				}
+//			}
+			
 			try {
-				spi_.writeReadAsync(0, buffer1_, buffer1_.length, buffer1_.length, null, 0);
-				spi_.writeRead(buffer2_, buffer2_.length, buffer2_.length, null, 0);
+				mSPI.writeReadAsync(0, mBuffer1, mBuffer1.length, mBuffer1.length, null, 0);
+				mSPI.writeRead(mBuffer2, mBuffer2.length, mBuffer2.length, null, 0);
+				
+				// 1 second refresh rate
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
+				log("InterruptionException");
+				log(e.getMessage());
 			}
 		}
 		
@@ -126,10 +184,10 @@ public class MainActivity extends IOIOActivity {
 			// Find the right buffer to write to (first or second half).
 			byte[] buffer;
 			if (num >= 16) {
-				buffer = buffer2_;
+				buffer = mBuffer2;
 				num -= 16;
 			} else {
-				buffer = buffer1_;
+				buffer = mBuffer1;
 			}
 			num *= 3;
 			buffer[num++] = rgb.r;
@@ -145,6 +203,8 @@ public class MainActivity extends IOIOActivity {
 	 */
 	@Override
 	protected IOIOLooper createIOIOLooper() {
-		return new Looper();
+		log("createIOIOLooper");
+		mLooper = new Looper();
+		return mLooper;
 	}
 }

@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Hello IOIO</string>
+    <string name="toggle_led">Toggle LED</string>
+    <string name="clear_log">Clear Log</string>
+    <string name="force_setup">Force Setup</string>
 </resources>
