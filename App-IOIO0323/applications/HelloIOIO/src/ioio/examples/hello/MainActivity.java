@@ -231,10 +231,6 @@ public class MainActivity extends IOIOActivity {
 			
 			mLED.write(!mToggleButton.isChecked());
 			
-			// We have 32 LEDs. Each one of them gets lit with probability
-			// frequency_. If lit, we pick a random pixel from the current preview
-			// frame and use its color. Otherwise, we set the LED to black and
-			// setLed() will take care of gradual fading.
 			RGB color = null;
 			try {
 				color = getSlidersColor();
@@ -245,13 +241,18 @@ public class MainActivity extends IOIOActivity {
 			
 			int rand1, rand2;
 			int max = 3;
-			for (int i = 0; i < 48; i++) {
-//				setLed(i, color);
-
-				rand1 = (int) (Math.random() * max);
+			for (int i = 0; i < 48; i += 3) {
+				mBuffer1[i] = color.r;
+				mBuffer1[i+1] = color.g;
+				mBuffer1[i+2] = color.b;
+				mBuffer2[i] = color.r;
+				mBuffer2[i+1] = color.g;
+				mBuffer2[i+2] = color.b;
+				
+				/*rand1 = (int) (Math.random() * max);
 				rand2 = (int) (Math.random() * max);
 				mBuffer1[i] = (byte) strip_colors[rand1];
-				mBuffer2[i] = (byte) strip_colors[rand2];
+				mBuffer2[i] = (byte) strip_colors[rand2];*/
 			}
 			
 			try {
@@ -279,49 +280,8 @@ public class MainActivity extends IOIOActivity {
 			
 			log("Found color values : "+r+" "+g+" "+b);
 			
-			return new RGB(Byte.valueOf("0"), Byte.valueOf("20"), Byte.valueOf("100"));
-//			return new RGB(Byte.valueOf(String.valueOf(r), 10), Byte.valueOf("20"), Byte.valueOf("100"));
-//			return new RGB((byte)r, (byte)g, (byte)b);
+			return new RGB((byte)r, (byte)g, (byte)b);
 		}
-
-		/**
-		 * Set an LED to a certain color.
-		 * If black is applied, the LED will fade out.
-		 */
-		private void setLed(int num, RGB rgb) {
-			// Find the right buffer to write to (first or second half).
-			byte[] buffer;
-			if (num >= 16) {
-				buffer = mBuffer2;
-//				num -= 16;
-			} else {
-				buffer = mBuffer1;
-			}
-			
-			num *= 3;
-			buffer[num++] = rgb.r;
-			buffer[num++] = rgb.g;
-			buffer[num++] = rgb.b;
-
-			// Poor-man's white balanace :)
-//			buffer[num++] = fixColor(rgb.r, 0.9);
-//			buffer[num++] = rgb.g;
-//			buffer[num++] = fixColor(rgb.b, 0.5);
-			
-			if (num >= 16) {
-				mBuffer2 = buffer;
-			} else {
-				mBuffer1 = buffer;
-			}
-		}
-
-		/** Attenuates a brightness level. */
-		private byte fixColor(byte color, double attenuation) {
-			double d = (double) ((int) color & 0xFF) / 256;
-			d *= attenuation;
-			return (byte) (d * 256);
-		}
-		
 	}
 
 	/**
