@@ -71,7 +71,7 @@ import android.os.Bundle;
  */
 public abstract class IOIOActivity extends Activity implements
 		IOIOLooperProvider {
-	private final IOIOAndroidApplicationHelper helper_ = new IOIOAndroidApplicationHelper(
+	public final IOIOAndroidApplicationHelper helper_ = new IOIOAndroidApplicationHelper(
 			this, this);
 
 	/**
