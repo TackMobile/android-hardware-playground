@@ -59,7 +59,7 @@ public class MainActivity extends IOIOActivity {
 			public void onClick(View v) {
 				try {
 
-					MainActivity.this.helper_.restart();
+					//MainActivity.this.helper_.restart();
 					
 //					if (mLooper == null)
 //						mLooper = new Looper();
@@ -91,7 +91,7 @@ public class MainActivity extends IOIOActivity {
 					logString = new StringBuilder();
 				}
 				
-				logView.setText(logString.append(s).append("\n").toString());
+				//logView.setText(logString.append(s).append("\n").toString());
 				mScrollView.fullScroll(ScrollView.FOCUS_DOWN);
 			}
 		});
@@ -161,45 +161,6 @@ public class MainActivity extends IOIOActivity {
 				log("ioio connected");
 				mLED = ioio_.openDigitalOutput(0, true);
 				mSPI = ioio_.openSpiMaster(5, 4, 3, 6, SpiMaster.Rate.RATE_50K);
-				
-				//Pre-fill the color array with known values
-				strip_colors = new long[STRIP_LENGTH];
-				strip_colors[0] = 0xFF0000; //Bright Red
-				strip_colors[1] = 0x00FF00; //Bright Green
-				strip_colors[2] = 0x0000FF; //Bright Blue
-				strip_colors[3] = 0x000000; //Bright Black
-//				strip_colors[3] = 0x010000; //Faint red
-//				strip_colors[4] = 0x800000; //1/2 red (0x80 = 128 out of 256)
-
-//				strip_colors[3] = 0xFF0000; //Bright Red
-//				strip_colors[4] = 0x00FF00; //Bright Green
-//				strip_colors[5] = 0x0000FF; //Bright Blue
-//				strip_colors[6] = 0xFF0000; //Bright Red
-//				strip_colors[7] = 0x00FF00; //Bright Green
-//				strip_colors[8] = 0x0000FF; //Bright Blue
-//				strip_colors[9] = 0xFF0000; //Bright Red
-//				strip_colors[10] = 0x00FF00; //Bright Green
-//				strip_colors[11] = 0x0000FF; //Bright Blue
-//				strip_colors[12] = 0xFF0000; //Bright Red
-//				strip_colors[13] = 0x00FF00; //Bright Green
-//				strip_colors[14] = 0x0000FF; //Bright Blue
-//				strip_colors[15] = 0xFF0000; //Bright Red
-//				strip_colors[16] = 0x00FF00; //Bright Green
-//				strip_colors[17] = 0x0000FF; //Bright Blue
-//				strip_colors[18] = 0xFF0000; //Bright Red
-//				strip_colors[19] = 0x00FF00; //Bright Green
-//				strip_colors[20] = 0x0000FF; //Bright Blue
-//				strip_colors[21] = 0xFF0000; //Bright Red
-//				strip_colors[22] = 0x00FF00; //Bright Green
-//				strip_colors[23] = 0x0000FF; //Bright Blue
-//				strip_colors[24] = 0xFF0000; //Bright Red
-//				strip_colors[25] = 0x00FF00; //Bright Green
-//				strip_colors[26] = 0x0000FF; //Bright Blue
-//				strip_colors[27] = 0xFF0000; //Bright Red
-//				strip_colors[28] = 0x00FF00; //Bright Green
-//				strip_colors[29] = 0x0000FF; //Bright Blue
-//				strip_colors[30] = 0xFF0000; //Bright Red
-//				strip_colors[31] = 0x00FF00; //Bright Green
 			} else {
 				log("ioio is null. Setup Failed.");
 			}
@@ -237,7 +198,6 @@ public class MainActivity extends IOIOActivity {
 			} catch (Exception e) {
 				log(e.getMessage());
 			}
-			log("Updating LED Strip : "+color.r+" "+color.g+" "+color.b);
 			
 			int rand1, rand2;
 			int max = 3;
@@ -248,18 +208,10 @@ public class MainActivity extends IOIOActivity {
 				mBuffer2[i] = color.r;
 				mBuffer2[i+1] = color.g;
 				mBuffer2[i+2] = color.b;
-				
-				/*rand1 = (int) (Math.random() * max);
-				rand2 = (int) (Math.random() * max);
-				mBuffer1[i] = (byte) strip_colors[rand1];
-				mBuffer2[i] = (byte) strip_colors[rand2];*/
 			}
-			
 			try {
 				writeBuffers();
-				
-				// refresh rate
-				Thread.sleep(600);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				log("InterruptionException");
 				log(e.getMessage());
